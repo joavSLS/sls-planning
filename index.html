@@ -53,7 +53,13 @@
   .daynav input[type=date]{border:1px solid var(--border); background:var(--card); color:var(--ink); border-radius:9px; padding:10px 12px; font-size:17px; font-family:inherit;}
   .themetoggle, .liststoggle{border:1px solid var(--border); background:var(--card); color:var(--ink); border-radius:9px; padding:11px 15px; font-size:17px; cursor:pointer;}
   .themetoggle:hover, .liststoggle:hover{background:var(--hover);}
+  .liststoggle.active-unlock{background:var(--green); color:#fff; border-color:var(--green);}
+  .liststoggle.active-unlock:hover{background:var(--green-dark); border-color:var(--green-dark);}
+  .liststoggle.active-chef{background:var(--purple); color:#fff; border-color:var(--purple);}
+  .liststoggle.active-chef:hover{filter:brightness(0.92);}
   .legend{display:flex; gap:22px; font-size:16px; color:var(--ink-soft); margin-bottom:24px; flex-wrap:wrap;}
+  .pending-badge{display:inline-flex; align-items:center; gap:8px; background:var(--red-bg); color:var(--red-text); padding:8px 16px; border-radius:20px; font-size:15px; font-weight:600; margin-bottom:16px; cursor:pointer;}
+  .pending-badge.hidden{display:none;}
   .legend span{display:inline-flex; align-items:center; gap:8px;}
   .dot{width:14px; height:14px; border-radius:4px; display:inline-block;}
   .section{margin-bottom:26px;}
@@ -61,9 +67,9 @@
   .section-head h2{font-size:20px; font-weight:600; margin:0;}
   .section-head .section-date{font-size:17px; color:var(--ink-soft); font-weight:400;}
   .col-header{
-    display:flex; align-items:center; gap:12px; padding:0 24px 10px; font-weight:700; font-size:16px; color:var(--ink-soft);
+    display:flex; align-items:center; gap:12px; padding:8px 0; margin-bottom:2px; font-weight:700; font-size:14px; color:var(--ink-soft); border-bottom:1px solid var(--border);
   }
-  .col-header span{font-weight:700; font-size:16px; color:var(--ink-soft); font-family:inherit;}
+  .col-header span{font-weight:700; font-size:14px; color:var(--ink-soft); font-family:inherit;}
   .card{
     background:var(--card); border:1px solid var(--border); border-radius:14px;
     padding:20px 26px; margin-bottom:14px; border-left-width:12px; border-left-style:solid;
@@ -77,6 +83,7 @@
   .week-empty{font-size:14px; color:var(--ink-soft); font-style:italic;}
   .week-mag{font-size:14px; color:var(--ink-soft); margin-top:10px; padding-top:10px; border-top:1px solid var(--border);}
   .week-conflict{font-size:13px; color:var(--red-text); margin-top:8px; display:flex; align-items:center; gap:6px;}
+  .week-pending{font-size:13px; color:var(--cat-cntrl-text); margin-top:8px; display:flex; align-items:center; gap:6px; font-weight:600;}
   .week-open{background:none; border:none; color:var(--green-dark); cursor:pointer; font-size:14px; padding:8px 0 0; font-family:inherit;}
   .week-open:hover{text-decoration:underline;}
   .monthgrid{display:grid; grid-template-columns:52px repeat(7, 1fr); gap:8px;}
@@ -91,12 +98,33 @@
   .month-dot{width:10px; height:10px; border-radius:3px; flex-shrink:0;}
   .month-mag{font-size:12px; color:var(--ink-soft);}
   .month-conflict{font-size:12px; color:var(--red-text);}
+  .month-pending{font-size:12px; color:var(--cat-cntrl-text); font-weight:600;}
   .card.magazijn{border-left-color:var(--magazijn);}
   .card.magazijn.task-done{background:var(--done-bg);}
   .proj-title-row{display:flex; align-items:center; gap:12px; margin-bottom:10px;}
   .proj-title{font-weight:600; font-size:20px; border:none; background:transparent; color:var(--ink); flex:1; font-family:inherit; padding:6px 4px; border-bottom:1px solid transparent;}
   .proj-title:hover, .proj-title:focus{border-bottom:1px solid var(--border); outline:none;}
   .cat-select{border:1px solid var(--border); background:var(--card); color:var(--ink-soft); font-size:16px; border-radius:8px; padding:8px 10px; font-family:inherit;}
+  .bon-label{color:var(--ink-soft); font-size:14px; flex-shrink:0;}
+  .bon-select{border:none; font-size:14px; border-radius:20px; padding:6px 10px; font-family:inherit; cursor:pointer;}
+  .bon-select.bon-klaar{background:var(--done-bg); color:var(--green-dark);}
+  .bon-select.bon-nogniet{background:var(--red-bg); color:var(--red-text);}
+  .bon-select.bon-nvt{background:var(--hover); color:var(--ink-soft);}
+  .approval-led{display:inline-flex; align-items:center; gap:6px; font-size:14px; padding:6px 10px; border-radius:20px; white-space:nowrap; font-family:inherit; border:none;}
+  .approval-led .dot{width:9px; height:9px; border-radius:50%; display:inline-block;}
+  .approval-led.pending{background:var(--red-bg); color:var(--red-text);}
+  .approval-led.pending .dot{background:var(--red-text);}
+  .approval-led.approved{background:var(--done-bg); color:var(--green-dark);}
+  .approval-led.approved .dot{background:var(--green);}
+  .approval-led.clickable{cursor:pointer;}
+  .approval-led:not(.clickable){cursor:default;}
+  .absent-bar{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:16px; padding:10px 16px; background:var(--card); border:1px solid var(--border); border-radius:10px; font-size:15px;}
+  .absent-label{color:var(--ink-soft); font-weight:600; flex-shrink:0;}
+  .absent-entry{display:inline-flex; align-items:center; gap:3px;}
+  .absent-select{border:1px solid var(--border); background:var(--red-bg); color:var(--red-text); border-radius:16px; padding:5px 10px; font-size:13px; font-family:inherit; max-width:120px;}
+  .absent-select.absent-add{background:var(--bg); color:var(--ink-soft); max-width:110px;}
+  .absent-entry .del{font-size:14px; padding:2px 4px;}
+  body.locked .absent-entry .del, body.locked .absent-add{display:none;}
   .row{display:flex; align-items:center; gap:12px; padding:10px 0; border-top:1px solid var(--border); flex-wrap:wrap;}
   .row:first-of-type{border-top:none;}
   .row input, .row select{
@@ -147,6 +175,7 @@
   .lock-field{display:block; width:100%; margin-bottom:12px; padding:10px 12px; font-size:16px; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--ink); font-family:inherit;}
   body.locked .proj-title,
   body.locked .cat-select,
+  body.locked .bon-select,
   body.locked .row input:not([type=checkbox]),
   body.locked .row select{ pointer-events:none; cursor:default; }
   body.locked .row input:hover, body.locked .row select:hover{ background:transparent; }
@@ -181,9 +210,12 @@
       </select>
       <button class="liststoggle" id="listsToggle" title="Lijsten beheren">&#9881; Lijsten</button>
       <button class="liststoggle" id="lockToggle" title="Bewerken vergrendeld">&#128274; Bewerken</button>
+      <button class="liststoggle" id="chefToggle" title="Chef-modus (goedkeuren)">&#128737; Chef</button>
       <button class="themetoggle" id="themeToggle">Licht thema</button>
     </div>
   </div>
+
+  <div id="pendingBadge" class="pending-badge hidden"></div>
 
   <div class="legend">
     <span><span class="dot" style="background:var(--cat-sls)"></span>SLS</span>
@@ -193,18 +225,14 @@
     <span><span class="dot" style="background:var(--red-text)"></span>Materieel-conflict</span>
   </div>
 
+  <div class="absent-bar">
+    <span class="absent-label">Afwezig vandaag:</span>
+    <span id="absentChips"></span>
+  </div>
+
   <div id="dayView">
   <div class="section">
     <div class="section-head"><h2>Projecten <span class="section-date" id="projDateLabel"></span></h2><button class="clearall" id="clearProjects" title="Alle projecten van deze dag verwijderen">Wis alle projecten</button></div>
-    <div class="col-header">
-      <span class="f-naam">Naam</span>
-      <span class="f-rol">Functie</span>
-      <span class="f-transport">Transport</span>
-      <span class="f-tijd">Vertrek</span>
-      <span class="f-tijd">Begin</span>
-      <span class="f-opm">Opmerking</span>
-      <span class="spacer"></span>
-    </div>
     <div id="projectenList"></div>
     <button class="addproj" id="addProject">+ Project toevoegen</button>
   </div>
@@ -272,6 +300,13 @@
       <button class="btn-secondary" id="confirmCancel">Annuleren</button>
       <button class="btn-primary" id="confirmOk" style="background:var(--red-text);">Verwijderen</button>
     </div>
+  </div>
+</div>
+
+<div class="modal-backdrop hidden" id="chefModal">
+  <div class="modal" style="max-width:440px;">
+    <h2 id="chefModalTitle">Chef-modus ontgrendelen</h2>
+    <div id="chefModalBody"></div>
   </div>
 </div>
 
@@ -382,6 +417,11 @@ async function safeSet(key, value, shared){
 
 const CATEGORIES = ["SLS","SLS Install","CNTRL"];
 const CAT_VARS = { "SLS":"--cat-sls", "SLS Install":"--cat-install", "CNTRL":"--cat-cntrl" };
+const BON_OPTIONS = [
+  { value:"nog niet", label:"nog niet" },
+  { value:"klaar", label:"klaar" },
+  { value:"nvt", label:"n.v.t." }
+];
 
 let ROLLEN = ["Brengen","Halen","Chauffeur","Bouw","Breek","Allround","Audio Broadcast","Audio FOH","Audio MON","Audiosysteem","Audiotech","Buhne","Layhertech","Ledtech","Lichtoperator","Lichtsysteem","Lichttech","Prikker","Projectleider","Rigger","SFX","Show","Site","Stroom","Videotech","Volgspot","Zenders","Zoom","Prep","Installatie","Onderhoud","Opstart","Programmeren","Wireless","Pakken","Laden","Lossen","Opruimen","Klaarzetten","Testen","Audio+Chauf","Magazijner"];
 let CREW = ["Brechje","Daan","Daniel","Ed","Huub","Jarnick","Jeroen","Joav","Jochem","Kie-Chi","Mathias","Patrick G","Patrick N","Rob","Alexander","Sander","Stef","Tessa","Thim","Stagiare SLS","Tycho","TD","Loods","?","CNTRL","SLS","Adriaan","Vincent","Bas","Coen","INSTALL","Nathan","R&D","Eigen","Stagiare CNTRL"];
@@ -444,22 +484,23 @@ function todayStr(){ return toDateStr(new Date()); }
 
 function exampleState(){
   return {
+    afwezig: [],
     projects: [
-      { name: "Bouw zwarte cross", category:"SLS", rows: [
+      { name: "Bouw zwarte cross", category:"SLS", bonStatus:"nog niet", approved:true, rows: [
         { rol:"Audiotech", naam:"Daniel", transport:"", vertrek:"", begin:"", opm:"" },
         { rol:"Chauffeur", naam:"Sujash", transport:"TR-04+INHUUR", vertrek:"", begin:"8:45", opm:"TR-04 laten staan, retour met Toyota" },
         { rol:"Chauffeur", naam:"Jeroen", transport:"CBW-01", vertrek:"", begin:"", opm:"Of eerst ZC of eerst AED dan ZC" }
       ]},
-      { name: "Calis Audiovisueel ophalen", category:"SLS Install", rows: [
+      { name: "Calis Audiovisueel ophalen", category:"SLS Install", bonStatus:"klaar", approved:true, rows: [
         { rol:"Chauffeur", naam:"Daan", transport:"BW-01", vertrek:"12:00", begin:"", opm:"" }
       ]},
-      { name: "Accuraat retour", category:"SLS Install", rows: [
+      { name: "Accuraat retour", category:"SLS Install", bonStatus:"nvt", approved:true, rows: [
         { rol:"Chauffeur", naam:"Daan", transport:"BW-01", vertrek:"", begin:"", opm:"na ophalen Calis Audiovisueel" }
       ]},
-      { name: "AED K1 ophalen", category:"SLS", rows: [
+      { name: "AED K1 ophalen", category:"SLS", bonStatus:"nog niet", approved:false, rows: [
         { rol:"", naam:"Tycho", transport:"CBW-01", vertrek:"", begin:"", opm:"" }
       ]},
-      { name: "GioDio installatie", category:"CNTRL", rows: [
+      { name: "GioDio installatie", category:"CNTRL", bonStatus:"nog niet", approved:false, rows: [
         { rol:"", naam:"Joav", transport:"Eigen vervoer", vertrek:"", begin:"", opm:"" },
         { rol:"", naam:"Tycho", transport:"", vertrek:"", begin:"", opm:"" }
       ]}
@@ -477,7 +518,7 @@ function exampleState(){
 }
 
 function emptyState(){
-  return { projects: [], magazijn: [] };
+  return { afwezig: [], projects: [], magazijn: [] };
 }
 
 async function initTheme(){
@@ -510,7 +551,12 @@ async function loadDay(dateStr){
   try{
     const res = await safeGet(KEY_PREFIX + dateStr, true);
     newState = JSON.parse(res.value);
-    newState.projects.forEach(p => { if(!p.category) p.category = "SLS"; });
+    if(!Array.isArray(newState.afwezig)) newState.afwezig = [];
+    newState.projects.forEach(p => {
+      if(!p.category) p.category = "SLS";
+      if(!p.bonStatus) p.bonStatus = "nog niet";
+      if(p.approved === undefined) p.approved = true;
+    });
     newState.magazijn.forEach(m => {
       if(!Array.isArray(m.rows)){
         m.rows = [{ naam: m.naam || "", transport: m.transport || "" }];
@@ -541,8 +587,40 @@ function scheduleSave(){
     }catch(e){
       statusLine.textContent = "Opslaan mislukt — probeer opnieuw";
     }
+    refreshPendingBadge();
   }, 500);
 }
+
+async function refreshPendingBadge(){
+  const badge = document.getElementById("pendingBadge");
+  if(!chefUnlocked){
+    badge.classList.add("hidden");
+    return;
+  }
+  const today = todayStr();
+  let projects = [];
+  if(currentDate === today && state){
+    projects = state.projects || [];
+  } else {
+    try{
+      const res = await safeGet(KEY_PREFIX + today, true);
+      projects = (JSON.parse(res.value).projects) || [];
+    }catch(e){ projects = []; }
+  }
+  const count = projects.filter(p => !p.approved).length;
+  if(count > 0){
+    badge.classList.remove("hidden");
+    badge.innerHTML = `&#9203; ${count} project${count>1?'en':''} van vandaag wacht${count>1?'en':''} nog op goedkeuring`;
+  } else {
+    badge.classList.add("hidden");
+  }
+}
+
+document.getElementById("pendingBadge").addEventListener("click", () => {
+  currentDate = todayStr();
+  setViewMode("dag");
+  loadDay(currentDate);
+});
 
 function transportCounts(){
   const counts = {};
@@ -556,6 +634,25 @@ function transportCounts(){
     if(t && t.toLowerCase() !== "eigen vervoer"){ counts[t] = (counts[t]||0) + 1; }
   }));
   return counts;
+}
+
+function markProjectEdited(pi){
+  const proj = state.projects[pi];
+  if(!proj) return;
+  proj.approved = chefUnlocked;
+  const card = document.querySelectorAll("#projectenList > .card")[pi];
+  if(card){
+    const catVar = CAT_VARS[proj.category] || "--cat-sls";
+    card.style.background = `color-mix(in srgb, var(${catVar}) ${proj.approved ? 16 : 6}%, var(--card))`;
+    const led = card.querySelector(".approval-led");
+    if(led){
+      led.classList.toggle("approved", proj.approved);
+      led.classList.toggle("pending", !proj.approved);
+      led.classList.toggle("clickable", chefUnlocked);
+      led.innerHTML = `<span class="dot"></span>${proj.approved ? "Goedgekeurd" : "In afwachting"}`;
+      led.title = (proj.approved ? "Goedgekeurd" : "Wacht op goedkeuring") + (chefUnlocked ? " — klik om te wijzigen" : "");
+    }
+  }
 }
 
 function updateConflictStyles(){
@@ -579,12 +676,40 @@ function updateConflictStyles(){
   }
 }
 
+function renderAbsentBar(){
+  const wrap = document.getElementById("absentChips");
+  wrap.innerHTML = "";
+  const list = state.afwezig || [];
+
+  list.forEach((naam, i) => {
+    const entry = document.createElement("span");
+    entry.className = "absent-entry";
+    const opts = ['<option value="">—</option>'].concat(
+      CREW.map(c => `<option value="${escapeAttr(c)}" ${c===naam?'selected':''}>${escapeAttr(c)}</option>`)
+    ).join("");
+    entry.innerHTML = `
+      <select class="absent-select" data-index="${i}">${opts}</select>
+      <button class="del" data-action="delabsent" data-index="${i}" title="Verwijderen">&times;</button>
+    `;
+    wrap.appendChild(entry);
+  });
+
+  const addEntry = document.createElement("span");
+  addEntry.className = "absent-entry";
+  const addOpts = ['<option value="">+ naam</option>'].concat(
+    CREW.map(c => `<option value="${escapeAttr(c)}">${escapeAttr(c)}</option>`)
+  ).join("");
+  addEntry.innerHTML = `<select class="absent-select absent-add" data-index="-1">${addOpts}</select>`;
+  wrap.appendChild(addEntry);
+}
+
 function render(){
   document.getElementById("datePicker").value = currentDate;
   const d = new Date(currentDate + "T00:00:00");
   const label = d.toLocaleDateString("nl-NL", { weekday:"long", day:"numeric", month:"long", year:"numeric" });
   document.getElementById("dateLabel").textContent = label;
   document.getElementById("projDateLabel").textContent = "— " + label;
+  renderAbsentBar();
 
   const counts = transportCounts();
   const isConflict = (t) => t && t.trim() && counts[t.trim()] > 1;
@@ -596,16 +721,41 @@ function render(){
     card.className = "card";
     const catVar = CAT_VARS[proj.category] || "--cat-sls";
     card.style.borderLeftColor = `var(${catVar})`;
+    card.style.background = `color-mix(in srgb, var(${catVar}) ${proj.approved ? 16 : 6}%, var(--card))`;
 
     const titleRow = document.createElement("div");
     titleRow.className = "proj-title-row";
     const catOptions = CATEGORIES.map(c => `<option value="${c}" ${c===proj.category?'selected':''}>${c}</option>`).join("");
+    const bonOptions = BON_OPTIONS.map(b => `<option value="${b.value}" ${b.value===proj.bonStatus?'selected':''}>${b.label}</option>`).join("");
+    const bonClass = proj.bonStatus === "klaar" ? "bon-klaar" : proj.bonStatus === "nvt" ? "bon-nvt" : "bon-nogniet";
+    const approved = !!proj.approved;
+    const ledClickable = chefUnlocked;
     titleRow.innerHTML = `
       <input class="proj-title" value="${escapeAttr(proj.name)}" data-pi="${pi}" data-field="name">
       <select class="cat-select" data-pi="${pi}" data-field="category">${catOptions}</select>
+      <span class="bon-label">Bon:</span>
+      <select class="bon-select ${bonClass}" data-pi="${pi}" data-field="bonStatus">${bonOptions}</select>
+      <button class="approval-led ${approved?'approved':'pending'} ${ledClickable?'clickable':''}" data-action="toggleapproval" data-pi="${pi}" title="${approved?'Goedgekeurd':'Wacht op goedkeuring'}${ledClickable?' — klik om te wijzigen':''}">
+        <span class="dot"></span>${approved?'Goedgekeurd':'In afwachting'}
+      </button>
       <button class="del" data-action="delproject" data-pi="${pi}" title="Project verwijderen">&times;</button>
     `;
     card.appendChild(titleRow);
+
+    if(proj.rows.length){
+      const colHeader = document.createElement("div");
+      colHeader.className = "col-header";
+      colHeader.innerHTML = `
+        <span class="f-naam">Naam</span>
+        <span class="f-rol">Functie</span>
+        <span class="f-transport">Transport</span>
+        <span class="f-tijd">Vertrek</span>
+        <span class="f-tijd">Begin</span>
+        <span class="f-opm">Opmerking</span>
+        <span class="spacer"></span>
+      `;
+      card.appendChild(colHeader);
+    }
 
     proj.rows.forEach((row, ri) => {
       const rEl = document.createElement("div");
@@ -690,9 +840,11 @@ document.addEventListener("input", (e) => {
   if(t.dataset.pi !== undefined && t.dataset.ri !== undefined && t.dataset.field){
     state.projects[+t.dataset.pi].rows[+t.dataset.ri][t.dataset.field] = t.value;
     if(t.dataset.field === "transport") updateConflictStyles();
+    markProjectEdited(+t.dataset.pi);
     scheduleSave();
   } else if(t.dataset.pi !== undefined && t.dataset.field === "name"){
     state.projects[+t.dataset.pi].name = t.value;
+    markProjectEdited(+t.dataset.pi);
     scheduleSave();
   } else if(t.dataset.mi !== undefined && t.dataset.ri !== undefined && t.dataset.field){
     state.magazijn[+t.dataset.mi].rows[+t.dataset.ri][t.dataset.field] = t.value;
@@ -717,6 +869,10 @@ document.addEventListener("change", (e) => {
   const t = e.target;
   if(t.dataset.field === "category" && t.dataset.pi !== undefined){
     state.projects[+t.dataset.pi].category = t.value;
+    markProjectEdited(+t.dataset.pi);
+    render(); scheduleSave();
+  } else if(t.dataset.field === "bonStatus" && t.dataset.pi !== undefined){
+    state.projects[+t.dataset.pi].bonStatus = t.value;
     render(); scheduleSave();
   }
 });
@@ -731,10 +887,21 @@ document.addEventListener("click", (e) => {
     render(); scheduleSave();
   } else if(action === "delrow"){
     state.projects[+btn.dataset.pi].rows.splice(+btn.dataset.ri, 1);
+    markProjectEdited(+btn.dataset.pi);
     render(); scheduleSave();
   } else if(action === "addrow"){
     state.projects[+btn.dataset.pi].rows.push({rol:"",naam:"",transport:"",vertrek:"",begin:"",opm:""});
+    markProjectEdited(+btn.dataset.pi);
     render(); scheduleSave();
+  } else if(action === "toggleapproval"){
+    if(chefUnlocked){
+      const proj = state.projects[+btn.dataset.pi];
+      proj.approved = !proj.approved;
+      render(); scheduleSave();
+    }
+  } else if(action === "delabsent"){
+    state.afwezig.splice(+btn.dataset.index, 1);
+    renderAbsentBar(); scheduleSave();
   } else if(action === "deltask"){
     state.magazijn.splice(+btn.dataset.mi, 1);
     render(); scheduleSave();
@@ -745,7 +912,7 @@ document.addEventListener("click", (e) => {
     state.magazijn[+btn.dataset.mi].rows.push({naam:"", transport:""});
     render(); scheduleSave();
   } else if(btn.id === "addProject"){
-    state.projects.push({name:"Nieuw project", category:"SLS", rows:[{rol:"",naam:"",transport:"",vertrek:"",begin:"",opm:""}]});
+    state.projects.push({name:"Nieuw project", category:"SLS", bonStatus:"nog niet", approved:chefUnlocked, rows:[{rol:"",naam:"",transport:"",vertrek:"",begin:"",opm:""}]});
     render(); scheduleSave();
   } else if(btn.id === "addMagTask"){
     state.magazijn.push({taak:"Nieuwe taak", done:false, opm:"", rows:[{naam:"", transport:""}]});
@@ -797,6 +964,24 @@ function setViewMode(mode){
   if(mode === "week") renderWeek();
   if(mode === "maand") renderMonth();
 }
+
+document.addEventListener("change", (e) => {
+  if(!state) return;
+  const t = e.target;
+  if(t.classList && t.classList.contains("absent-select")){
+    const idx = +t.dataset.index;
+    if(!Array.isArray(state.afwezig)) state.afwezig = [];
+    if(idx === -1){
+      if(t.value) state.afwezig.push(t.value);
+    } else if(t.value === ""){
+      state.afwezig.splice(idx, 1);
+    } else {
+      state.afwezig[idx] = t.value;
+    }
+    renderAbsentBar();
+    scheduleSave();
+  }
+});
 
 document.getElementById("datePicker").addEventListener("change", (e) => {
   currentDate = e.target.value;
@@ -874,6 +1059,11 @@ async function renderWeek(){
       magHtml = `<div class="week-mag">Magazijn/TD: ${done}/${dayState.magazijn.length} afgevinkt</div>`;
     }
 
+    const pendingCount = dayState ? (dayState.projects||[]).filter(p => !p.approved).length : 0;
+    const pendingHtml = pendingCount
+      ? `<div class="week-pending">&#9203; ${pendingCount} project${pendingCount>1?'en':''} wacht${pendingCount>1?'en':''} op goedkeuring</div>`
+      : "";
+
     let conflictHtml = "";
     if(dayState){
       const counts = {};
@@ -896,6 +1086,7 @@ async function renderWeek(){
       <p class="week-date">${d.toLocaleDateString("nl-NL", {day:"numeric", month:"long"})}</p>
       ${projectsHtml}
       ${magHtml}
+      ${pendingHtml}
       ${conflictHtml}
       <button class="week-open" data-action="openday" data-date="${dateStr}">Open dag &#8594;</button>
     `;
@@ -988,6 +1179,11 @@ async function renderMonth(){
         const done = dState.magazijn.filter(m=>m.done).length;
         magHtml = `<div class="month-mag">${done}/${dState.magazijn.length} magazijn</div>`;
       }
+      let pendingHtml = "";
+      if(dState){
+        const pendingCount = (dState.projects||[]).filter(p => !p.approved).length;
+        if(pendingCount) pendingHtml = `<div class="month-pending">&#9203; ${pendingCount}</div>`;
+      }
       let conflictHtml = "";
       if(dState){
         const counts = {};
@@ -1006,6 +1202,7 @@ async function renderMonth(){
         <span class="daynum">${d.getDate()}</span>
         ${dotsHtml}
         ${magHtml}
+        ${pendingHtml}
         ${conflictHtml}
       `;
       grid.appendChild(cell);
@@ -1035,6 +1232,7 @@ async function loadPassHash(){
 function applyEditLock(){
   document.body.classList.toggle("locked", !editUnlocked);
   document.getElementById("lockToggle").innerHTML = editUnlocked ? "&#128275; Vergrendelen" : "&#128274; Bewerken";
+  document.getElementById("lockToggle").classList.toggle("active-unlock", editUnlocked);
 }
 
 function openLockModal(){
@@ -1114,6 +1312,102 @@ document.getElementById("lockToggle").addEventListener("click", () => {
   }
 });
 
+const CHEF_PASS_KEY = "sls-planning:chefpass-hash";
+let chefPassHash = null;
+let chefUnlocked = false;
+
+async function loadChefPassHash(){
+  try{
+    const res = await safeGet(CHEF_PASS_KEY, true);
+    chefPassHash = res.value;
+  }catch(e){ chefPassHash = null; }
+}
+
+function applyChefLock(){
+  document.getElementById("chefToggle").innerHTML = chefUnlocked ? "&#128737; Chef (aan)" : "&#128737; Chef";
+  document.getElementById("chefToggle").title = chefUnlocked ? "Chef-modus actief — klik om af te sluiten" : "Chef-modus (goedkeuren)";
+  document.getElementById("chefToggle").classList.toggle("active-chef", chefUnlocked);
+  document.body.classList.toggle("chef-mode", chefUnlocked);
+  refreshPendingBadge();
+}
+
+function openChefModal(){
+  const body = document.getElementById("chefModalBody");
+  if(!chefPassHash){
+    document.getElementById("chefModalTitle").textContent = "Chef-wachtwoord instellen";
+    body.innerHTML = `
+      <p style="color:var(--ink-soft); font-size:15px; margin:0 0 14px;">Er is nog geen chef-wachtwoord ingesteld. Wie dit nu instelt, kan straks projecten goedkeuren en werkt zelf zonder goedkeuring.</p>
+      <input type="password" id="chefNew1" class="lock-field" placeholder="Nieuw chef-wachtwoord">
+      <input type="password" id="chefNew2" class="lock-field" placeholder="Herhaal wachtwoord">
+      <div class="lock-error" id="chefErr"></div>
+      <div class="modal-actions">
+        <button class="btn-secondary" id="chefCancel">Annuleren</button>
+        <button class="btn-primary" id="chefSubmit">Instellen</button>
+      </div>
+    `;
+  } else {
+    document.getElementById("chefModalTitle").textContent = "Chef-modus ontgrendelen";
+    body.innerHTML = `
+      <input type="password" id="chefPass" class="lock-field" placeholder="Chef-wachtwoord">
+      <div class="lock-error" id="chefErr"></div>
+      <div class="modal-actions">
+        <button class="btn-secondary" id="chefCancel">Annuleren</button>
+        <button class="btn-primary" id="chefSubmit">Ontgrendelen</button>
+      </div>
+    `;
+  }
+  document.getElementById("chefModal").classList.remove("hidden");
+  document.getElementById("chefCancel").addEventListener("click", closeChefModal);
+  document.getElementById("chefSubmit").addEventListener("click", submitChefModal);
+  const firstInput = body.querySelector("input");
+  if(firstInput) firstInput.focus();
+  body.querySelectorAll("input").forEach(inp => {
+    inp.addEventListener("keydown", (ev) => { if(ev.key === "Enter") submitChefModal(); });
+  });
+}
+
+function closeChefModal(){
+  document.getElementById("chefModal").classList.add("hidden");
+}
+
+async function submitChefModal(){
+  const errEl = document.getElementById("chefErr");
+  if(!chefPassHash){
+    const p1 = document.getElementById("chefNew1").value;
+    const p2 = document.getElementById("chefNew2").value;
+    if(p1.length < 4){ errEl.textContent = "Minimaal 4 tekens."; return; }
+    if(p1 !== p2){ errEl.textContent = "Wachtwoorden komen niet overeen."; return; }
+    chefPassHash = await sha256(p1);
+    await safeSet(CHEF_PASS_KEY, chefPassHash, true);
+    chefUnlocked = true;
+    applyChefLock();
+    closeChefModal();
+  } else {
+    const p = document.getElementById("chefPass").value;
+    const h = await sha256(p);
+    if(h === chefPassHash){
+      chefUnlocked = true;
+      applyChefLock();
+      closeChefModal();
+    } else {
+      errEl.textContent = "Onjuist wachtwoord.";
+    }
+  }
+}
+
+document.getElementById("chefModal").addEventListener("click", (e) => {
+  if(e.target.id === "chefModal") closeChefModal();
+});
+
+document.getElementById("chefToggle").addEventListener("click", () => {
+  if(chefUnlocked){
+    chefUnlocked = false;
+    applyChefLock();
+  } else {
+    openChefModal();
+  }
+});
+
 function askConfirm(message, onConfirm){
   document.getElementById("confirmBody").textContent = message;
   document.getElementById("confirmModal").classList.remove("hidden");
@@ -1135,8 +1429,11 @@ document.getElementById("confirmModal").addEventListener("click", (e) => {
   await initTheme();
   await loadPassHash();
   applyEditLock();
+  await loadChefPassHash();
+  applyChefLock();
   setViewMode("dag");
   await loadDay(currentDate);
+  refreshPendingBadge();
 })();
 </script>
 </body>
