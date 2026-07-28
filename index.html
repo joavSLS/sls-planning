@@ -183,6 +183,42 @@
   body.locked .addrow,
   body.locked .addproj,
   body.locked #listsToggle{ display:none !important; }
+  @media (max-width: 640px){
+    body{font-size:15px;}
+    .wrap{padding:14px 16px;}
+    .header{flex-direction:column; align-items:flex-start; gap:10px; margin-bottom:16px;}
+    .brand .logo{width:40px; height:40px;}
+    .brand h1{font-size:18px;}
+    .brand .sub{font-size:13px;}
+    .daynav{width:100%; gap:6px;}
+    .daynav button, .liststoggle, .themetoggle{padding:8px 10px; font-size:13px;}
+    .daynav input[type=date]{font-size:13px; padding:6px 8px; flex:1 1 auto; min-width:0;}
+    #viewSelect{font-size:13px; padding:8px 10px;}
+    .legend{font-size:12px; gap:8px 14px; margin-bottom:16px;}
+    .pending-badge{font-size:13px; padding:7px 12px;}
+    .absent-bar{font-size:13px; padding:8px 12px;}
+    .absent-select{font-size:12px; padding:4px 8px; max-width:100px;}
+
+    .col-header{display:none;}
+    .proj-title-row{flex-wrap:wrap; row-gap:8px;}
+    .proj-title{font-size:16px; flex-basis:100%;}
+    .cat-select, .bon-select{font-size:13px; padding:6px 8px;}
+    .approval-led{font-size:13px; padding:5px 8px; flex:1 1 auto; justify-content:center;}
+
+    .row{flex-direction:column; align-items:stretch; gap:6px; padding:10px 0;}
+    .row input, .row select{width:100%; max-width:100%; background:var(--bg); border-radius:8px; padding:9px 10px;}
+    .f-naam, .f-rol, .f-transport, .f-tijd, .f-opm, .f-taak{width:100%;}
+    .row .del{align-self:flex-end; margin-top:-4px;}
+
+    .card{padding:14px 16px;}
+
+    .weekgrid{grid-template-columns:1fr;}
+    .monthgrid{grid-template-columns:24px repeat(7, 1fr); gap:4px;}
+    .month-weekday-header, .month-week-num{font-size:11px;}
+    .month-day{min-height:60px; padding:5px 4px; font-size:11px;}
+    .month-day .daynum{font-size:13px;}
+    .month-dot{width:7px; height:7px;}
+  }
 </style>
 </head>
 <body>
@@ -433,8 +469,13 @@ function fillDatalist(id, items){
 }
 function refreshDatalists(){
   fillDatalist("rolList", ROLLEN);
-  fillDatalist("naamList", CREW);
   fillDatalist("transportList", TRANSPORT);
+  refreshNaamList();
+}
+function refreshNaamList(){
+  const afwezig = (state && Array.isArray(state.afwezig)) ? state.afwezig : [];
+  const available = CREW.filter(c => !afwezig.includes(c));
+  fillDatalist("naamList", available);
 }
 refreshDatalists();
 
@@ -684,8 +725,9 @@ function renderAbsentBar(){
   list.forEach((naam, i) => {
     const entry = document.createElement("span");
     entry.className = "absent-entry";
+    const beschikbaar = CREW.filter(c => c === naam || !list.includes(c));
     const opts = ['<option value="">—</option>'].concat(
-      CREW.map(c => `<option value="${escapeAttr(c)}" ${c===naam?'selected':''}>${escapeAttr(c)}</option>`)
+      beschikbaar.map(c => `<option value="${escapeAttr(c)}" ${c===naam?'selected':''}>${escapeAttr(c)}</option>`)
     ).join("");
     entry.innerHTML = `
       <select class="absent-select" data-index="${i}">${opts}</select>
@@ -696,8 +738,9 @@ function renderAbsentBar(){
 
   const addEntry = document.createElement("span");
   addEntry.className = "absent-entry";
+  const nogVrij = CREW.filter(c => !list.includes(c));
   const addOpts = ['<option value="">+ naam</option>'].concat(
-    CREW.map(c => `<option value="${escapeAttr(c)}">${escapeAttr(c)}</option>`)
+    nogVrij.map(c => `<option value="${escapeAttr(c)}">${escapeAttr(c)}</option>`)
   ).join("");
   addEntry.innerHTML = `<select class="absent-select absent-add" data-index="-1">${addOpts}</select>`;
   wrap.appendChild(addEntry);
@@ -709,6 +752,7 @@ function render(){
   const label = d.toLocaleDateString("nl-NL", { weekday:"long", day:"numeric", month:"long", year:"numeric" });
   document.getElementById("dateLabel").textContent = label;
   document.getElementById("projDateLabel").textContent = "— " + label;
+  refreshNaamList();
   renderAbsentBar();
 
   const counts = transportCounts();
@@ -901,7 +945,7 @@ document.addEventListener("click", (e) => {
     }
   } else if(action === "delabsent"){
     state.afwezig.splice(+btn.dataset.index, 1);
-    renderAbsentBar(); scheduleSave();
+    renderAbsentBar(); refreshNaamList(); scheduleSave();
   } else if(action === "deltask"){
     state.magazijn.splice(+btn.dataset.mi, 1);
     render(); scheduleSave();
@@ -979,6 +1023,7 @@ document.addEventListener("change", (e) => {
       state.afwezig[idx] = t.value;
     }
     renderAbsentBar();
+    refreshNaamList();
     scheduleSave();
   }
 });
