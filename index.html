@@ -104,18 +104,22 @@
   .materieel-col.dragover{border-color:var(--green); background:var(--green-light, var(--hover));}
   .materieel-card.dragover-card{outline:2px solid var(--green); outline-offset:1px;}
   .materieel-row{display:flex; flex-direction:column; gap:6px; margin-bottom:10px;}
+  .materieel-row.has-links{border:1px dashed var(--border); border-radius:12px; padding:8px;}
   .materieel-row .materieel-card.linked-oplegger{margin-left:22px; padding:7px 10px; font-size:13px;}
   .materieel-row .materieel-card.linked-oplegger .materieel-naam{font-size:13px;}
   .materieel-card{
     background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:8px 10px;
-    display:flex; align-items:center; gap:6px; cursor:grab; min-width:0; flex-wrap:wrap;
+    display:flex; flex-direction:column; gap:6px; cursor:grab; min-width:0;
   }
   .materieel-card:active{cursor:grabbing;}
+  .materieel-top{display:flex; align-items:center; gap:6px; min-width:0; position:relative; padding-right:26px;}
+  .materieel-top .materieel-del{position:absolute; top:0; right:0;}
   .materieel-type-dot{width:10px; height:10px; border-radius:50%; flex-shrink:0;}
   .materieel-type-dot.trekker{background:var(--cat-install);}
   .materieel-type-dot.oplegger{background:var(--cat-cntrl);}
-  .materieel-naam{flex:1 1 60px; min-width:0; font-weight:500; font-size:14px; border:none; background:transparent; color:var(--ink); font-family:inherit; padding:2px;}
-  .materieel-loc-select{flex:1 1 100%; min-width:0; max-width:100%; border:1px solid var(--border); background:var(--card); color:var(--ink-soft); font-size:11px; border-radius:6px; padding:4px 6px; font-family:inherit;}
+  .link-icon{font-size:12px; flex-shrink:0;}
+  .materieel-naam{flex:1; min-width:0; font-weight:500; font-size:14px; border:none; background:transparent; color:var(--ink); font-family:inherit; padding:2px;}
+  .materieel-loc-select{width:100%; min-width:0; box-sizing:border-box; border:1px solid var(--border); background:var(--card); color:var(--ink-soft); font-size:11px; border-radius:6px; padding:4px 6px; font-family:inherit;}
   body.locked .materieel-naam{pointer-events:none;}
   body.locked .materieel-card{cursor:default;}
   body.locked .materieel-loc-select{pointer-events:none;}
@@ -150,7 +154,8 @@
   .absent-entry .del{font-size:14px; padding:2px 4px;}
   body.locked .absent-select{pointer-events:none; cursor:default;}
   body.locked .absent-entry .del, body.locked .absent-add{display:none;}
-  .row{display:flex; align-items:center; gap:12px; padding:10px 0; border-top:1px solid var(--border); flex-wrap:wrap;}
+  .row{display:flex; align-items:center; gap:12px; padding:10px 34px 10px 0; border-top:1px solid var(--border); flex-wrap:wrap; position:relative;}
+  .row .del{position:absolute; top:8px; right:0;}
   .row:first-of-type{border-top:none;}
   .row input, .row select{
     border:none; background:transparent; font-family:inherit; font-size:18px; color:var(--ink); padding:6px 4px; border-radius:7px;
@@ -230,10 +235,10 @@
     .cat-select, .bon-select{font-size:13px; padding:6px 8px;}
     .approval-led{font-size:13px; padding:5px 8px; flex:1 1 auto; justify-content:center;}
 
-    .row{flex-direction:column; align-items:stretch; gap:6px; padding:10px 0;}
+    .row{flex-direction:column; align-items:stretch; gap:6px; padding:10px 0; position:static;}
     .row input, .row select{width:100%; max-width:100%; background:var(--bg); border-radius:8px; padding:9px 10px;}
     .f-naam, .f-rol, .f-transport, .f-tijd, .f-opm, .f-taak{width:100%;}
-    .row .del{align-self:flex-end; margin-top:-4px;}
+    .row .del{position:static; align-self:flex-end; margin-top:-4px;}
 
     .card{padding:14px 16px;}
 
@@ -1291,10 +1296,13 @@ function buildMaterieelCard(m, trekkers, linked){
   }
 
   card.innerHTML = `
-    <span class="materieel-type-dot ${m.type}"></span>
-    <input class="materieel-naam" value="${escapeAttr(m.naam)}" data-mat-id="${m.id}" data-mat-field="naam">
+    <div class="materieel-top">
+      <span class="materieel-type-dot ${m.type}"></span>
+      ${linked ? '<span class="link-icon" title="Gekoppeld aan trekker">&#128279;</span>' : ''}
+      <input class="materieel-naam" value="${escapeAttr(m.naam)}" data-mat-id="${m.id}" data-mat-field="naam">
+      <button class="del materieel-del" data-action="${linked ? 'unlinkmaterieel' : 'delmaterieel'}" data-mat-id="${m.id}" title="${linked ? 'Loskoppelen (terug naar Op de zaak)' : 'Verwijderen'}">&times;</button>
+    </div>
     <select class="materieel-loc-select" data-mat-id="${m.id}">${locOptionsHtml}</select>
-    <button class="del materieel-del" data-action="${linked ? 'unlinkmaterieel' : 'delmaterieel'}" data-mat-id="${m.id}" title="${linked ? 'Loskoppelen (terug naar Op de zaak)' : 'Verwijderen'}">&times;</button>
   `;
   return card;
 }
@@ -1318,11 +1326,10 @@ function renderMaterieel(){
 
     trekkersHier.forEach(trekker => {
       const row = document.createElement("div");
-      row.className = "materieel-row";
+      const linkedOpleggers = materieel.filter(m => !isTrekkerNaam(m.naam) && m.locatie === trekker.id);
+      row.className = "materieel-row" + (linkedOpleggers.length ? " has-links" : "");
       row.appendChild(buildMaterieelCard(trekker, trekkers, false));
-      materieel
-        .filter(m => !isTrekkerNaam(m.naam) && m.locatie === trekker.id)
-        .forEach(opl => row.appendChild(buildMaterieelCard(opl, trekkers, true)));
+      linkedOpleggers.forEach(opl => row.appendChild(buildMaterieelCard(opl, trekkers, true)));
       col.appendChild(row);
     });
 
