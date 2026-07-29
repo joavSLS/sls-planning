@@ -98,20 +98,24 @@
   .month-dots{display:flex; gap:4px; flex-wrap:wrap;}
   .month-dot{width:10px; height:10px; border-radius:3px; flex-shrink:0;}
 
-  .materieel-board{display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:16px;}
-  .materieel-col{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px 16px; min-height:120px;}
+  .materieel-board{display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:14px;}
+  .materieel-col{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:12px 14px; min-height:120px; min-width:0;}
   .materieel-col h3{margin:0 0 12px; font-size:16px; font-weight:600; display:flex; align-items:center; gap:8px;}
   .materieel-col.dragover{border-color:var(--green); background:var(--green-light, var(--hover));}
+  .materieel-card.dragover-card{outline:2px solid var(--green); outline-offset:1px;}
+  .materieel-row{display:flex; flex-direction:column; gap:6px; margin-bottom:10px;}
+  .materieel-row .materieel-card.linked-oplegger{margin-left:22px; padding:7px 10px; font-size:13px;}
+  .materieel-row .materieel-card.linked-oplegger .materieel-naam{font-size:13px;}
   .materieel-card{
-    background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; margin-bottom:8px;
-    display:flex; align-items:center; gap:10px; cursor:grab;
+    background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:8px 10px;
+    display:flex; align-items:center; gap:6px; cursor:grab; min-width:0; flex-wrap:wrap;
   }
   .materieel-card:active{cursor:grabbing;}
   .materieel-type-dot{width:10px; height:10px; border-radius:50%; flex-shrink:0;}
   .materieel-type-dot.trekker{background:var(--cat-install);}
   .materieel-type-dot.oplegger{background:var(--cat-cntrl);}
-  .materieel-naam{flex:1; font-weight:500; font-size:15px; border:none; background:transparent; color:var(--ink); font-family:inherit; padding:2px;}
-  .materieel-loc-select{border:1px solid var(--border); background:var(--card); color:var(--ink-soft); font-size:12px; border-radius:6px; padding:4px 6px; font-family:inherit;}
+  .materieel-naam{flex:1 1 60px; min-width:0; font-weight:500; font-size:14px; border:none; background:transparent; color:var(--ink); font-family:inherit; padding:2px;}
+  .materieel-loc-select{flex:1 1 100%; min-width:0; max-width:100%; border:1px solid var(--border); background:var(--card); color:var(--ink-soft); font-size:11px; border-radius:6px; padding:4px 6px; font-family:inherit;}
   body.locked .materieel-naam{pointer-events:none;}
   body.locked .materieel-card{cursor:default;}
   body.locked .materieel-loc-select{pointer-events:none;}
@@ -1267,29 +1271,66 @@ function scheduleMaterieelSave(){
   }, 500);
 }
 
+function isTrekkerNaam(naam){
+  return !!naam && naam.trim().toUpperCase().startsWith("TR-");
+}
+
+function buildMaterieelCard(m, trekkers, linked){
+  const card = document.createElement("div");
+  card.className = "materieel-card" + (linked ? " linked-oplegger" : "");
+  card.draggable = true;
+  card.dataset.id = m.id;
+  card.dataset.isTrekker = isTrekkerNaam(m.naam) ? "1" : "0";
+
+  let locOptionsHtml = LOCATIES.map(l => `<option value="${escapeAttr(l)}" ${l===m.locatie?'selected':''}>${escapeAttr(l)}</option>`).join("");
+  if(!isTrekkerNaam(m.naam)){
+    const trekkerOptsHtml = trekkers.map(t => `<option value="${escapeAttr(t.id)}" ${t.id===m.locatie?'selected':''}>Bij ${escapeAttr(t.naam)}</option>`).join("");
+    locOptionsHtml += trekkerOptsHtml;
+  }
+
+  card.innerHTML = `
+    <span class="materieel-type-dot ${m.type}"></span>
+    <input class="materieel-naam" value="${escapeAttr(m.naam)}" data-mat-id="${m.id}" data-mat-field="naam">
+    <select class="materieel-loc-select" data-mat-id="${m.id}">${locOptionsHtml}</select>
+    <button class="del materieel-del" data-action="${linked ? 'unlinkmaterieel' : 'delmaterieel'}" data-mat-id="${m.id}" title="${linked ? 'Loskoppelen (terug naar Op de zaak)' : 'Verwijderen'}">&times;</button>
+  `;
+  return card;
+}
+
 function renderMaterieel(){
   const board = document.getElementById("materieelBoard");
   board.innerHTML = "";
+  const trekkers = materieel.filter(m => isTrekkerNaam(m.naam));
+
   LOCATIES.forEach(loc => {
     const col = document.createElement("div");
     col.className = "materieel-col";
     col.dataset.locatie = loc;
-    const items = materieel.filter(m => m.locatie === loc);
-    col.innerHTML = `<h3>${escapeAttr(loc)} <span style="color:var(--ink-soft); font-weight:400; font-size:13px;">(${items.length})</span></h3>`;
-    items.forEach(m => {
-      const card = document.createElement("div");
-      card.className = "materieel-card";
-      card.draggable = true;
-      card.dataset.id = m.id;
-      const locOptions = LOCATIES.map(l => `<option value="${escapeAttr(l)}" ${l===m.locatie?'selected':''}>${escapeAttr(l)}</option>`).join("");
-      card.innerHTML = `
-        <span class="materieel-type-dot ${m.type}"></span>
-        <input class="materieel-naam" value="${escapeAttr(m.naam)}" data-mat-id="${m.id}" data-mat-field="naam">
-        <select class="materieel-loc-select" data-mat-id="${m.id}">${locOptions}</select>
-        <button class="del materieel-del" data-action="delmaterieel" data-mat-id="${m.id}" title="Verwijderen">&times;</button>
-      `;
-      col.appendChild(card);
+
+    const trekkersHier = trekkers.filter(t => t.locatie === loc);
+    const losseOpleggers = materieel.filter(m => !isTrekkerNaam(m.naam) && m.locatie === loc);
+    const totaal = trekkersHier.length + losseOpleggers.length +
+      materieel.filter(m => !isTrekkerNaam(m.naam) && trekkersHier.some(t => t.id === m.locatie)).length;
+
+    col.innerHTML = `<h3>${escapeAttr(loc)} <span style="color:var(--ink-soft); font-weight:400; font-size:13px;">(${totaal})</span></h3>`;
+
+    trekkersHier.forEach(trekker => {
+      const row = document.createElement("div");
+      row.className = "materieel-row";
+      row.appendChild(buildMaterieelCard(trekker, trekkers, false));
+      materieel
+        .filter(m => !isTrekkerNaam(m.naam) && m.locatie === trekker.id)
+        .forEach(opl => row.appendChild(buildMaterieelCard(opl, trekkers, true)));
+      col.appendChild(row);
     });
+
+    losseOpleggers.forEach(opl => {
+      const row = document.createElement("div");
+      row.className = "materieel-row";
+      row.appendChild(buildMaterieelCard(opl, trekkers, false));
+      col.appendChild(row);
+    });
+
     board.appendChild(col);
   });
 }
@@ -1322,8 +1363,18 @@ document.addEventListener("change", (e) => {
 document.addEventListener("click", (e) => {
   const btn = e.target.closest("[data-action='delmaterieel']");
   if(btn){
-    materieel = materieel.filter(m => m.id !== btn.dataset.matId);
+    const id = btn.dataset.matId;
+    materieel.forEach(m => { if(!isTrekkerNaam(m.naam) && m.locatie === id) m.locatie = "Op de zaak"; });
+    materieel = materieel.filter(m => m.id !== id);
     renderMaterieel(); scheduleMaterieelSave();
+  }
+  const unlinkBtn = e.target.closest("[data-action='unlinkmaterieel']");
+  if(unlinkBtn){
+    const item = materieel.find(m => m.id === unlinkBtn.dataset.matId);
+    if(item){
+      item.locatie = LOCATIES[0];
+      renderMaterieel(); scheduleMaterieelSave();
+    }
   }
 });
 
@@ -1333,22 +1384,38 @@ document.getElementById("materieelBoard").addEventListener("dragstart", (e) => {
 });
 
 document.getElementById("materieelBoard").addEventListener("dragover", (e) => {
+  const trekkerCard = e.target.closest(".materieel-card[data-is-trekker='1']");
+  if(trekkerCard){ e.preventDefault(); trekkerCard.classList.add("dragover-card"); return; }
   const col = e.target.closest(".materieel-col");
   if(col){ e.preventDefault(); col.classList.add("dragover"); }
 });
 document.getElementById("materieelBoard").addEventListener("dragleave", (e) => {
+  const trekkerCard = e.target.closest(".materieel-card[data-is-trekker='1']");
+  if(trekkerCard) trekkerCard.classList.remove("dragover-card");
   const col = e.target.closest(".materieel-col");
   if(col) col.classList.remove("dragover");
 });
 document.getElementById("materieelBoard").addEventListener("drop", (e) => {
-  const col = e.target.closest(".materieel-col");
-  if(!col) return;
-  e.preventDefault();
-  col.classList.remove("dragover");
+  document.querySelectorAll(".dragover-card").forEach(el => el.classList.remove("dragover-card"));
+  document.querySelectorAll(".dragover").forEach(el => el.classList.remove("dragover"));
   if(document.body.classList.contains("locked")) return;
   const id = e.dataTransfer.getData("text/plain");
   const item = materieel.find(m => m.id === id);
-  if(item){ item.locatie = col.dataset.locatie; renderMaterieel(); scheduleMaterieelSave(); }
+  if(!item) return;
+
+  const trekkerCard = e.target.closest(".materieel-card[data-is-trekker='1']");
+  if(trekkerCard && !isTrekkerNaam(item.naam) && trekkerCard.dataset.id !== item.id){
+    e.preventDefault();
+    item.locatie = trekkerCard.dataset.id;
+    renderMaterieel(); scheduleMaterieelSave();
+    return;
+  }
+
+  const col = e.target.closest(".materieel-col");
+  if(!col) return;
+  e.preventDefault();
+  item.locatie = col.dataset.locatie;
+  renderMaterieel(); scheduleMaterieelSave();
 });
 
 function changeMonth(deltaMonths){
