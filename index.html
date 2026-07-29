@@ -44,7 +44,8 @@
   .brand .logo img{width:100%; height:100%; object-fit:contain;}
   .brand h1{font-size:28px; margin:0; font-weight:600;}
   .brand .sub{font-size:17px; color:var(--ink-soft); margin:3px 0 0;}
-  .daynav{display:flex; align-items:center; gap:9px; flex-wrap:wrap;}
+  .daynav{display:flex; align-items:center; gap:9px; flex-wrap:wrap; min-width:0;}
+  .daynav > *{min-width:0; max-width:100%; box-sizing:border-box;}
   .daynav button, .btn{
     border:1px solid var(--border); background:var(--card); border-radius:9px;
     padding:11px 18px; font-size:17px; cursor:pointer; color:var(--ink); font-family:inherit;
@@ -96,6 +97,25 @@
   .month-day .daynum{font-weight:600; font-size:16px;}
   .month-dots{display:flex; gap:4px; flex-wrap:wrap;}
   .month-dot{width:10px; height:10px; border-radius:3px; flex-shrink:0;}
+
+  .materieel-board{display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:16px;}
+  .materieel-col{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px 16px; min-height:120px;}
+  .materieel-col h3{margin:0 0 12px; font-size:16px; font-weight:600; display:flex; align-items:center; gap:8px;}
+  .materieel-col.dragover{border-color:var(--green); background:var(--green-light, var(--hover));}
+  .materieel-card{
+    background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; margin-bottom:8px;
+    display:flex; align-items:center; gap:10px; cursor:grab;
+  }
+  .materieel-card:active{cursor:grabbing;}
+  .materieel-type-dot{width:10px; height:10px; border-radius:50%; flex-shrink:0;}
+  .materieel-type-dot.trekker{background:var(--cat-install);}
+  .materieel-type-dot.oplegger{background:var(--cat-cntrl);}
+  .materieel-naam{flex:1; font-weight:500; font-size:15px; border:none; background:transparent; color:var(--ink); font-family:inherit; padding:2px;}
+  .materieel-loc-select{border:1px solid var(--border); background:var(--card); color:var(--ink-soft); font-size:12px; border-radius:6px; padding:4px 6px; font-family:inherit;}
+  body.locked .materieel-naam{pointer-events:none;}
+  body.locked .materieel-card{cursor:default;}
+  body.locked .materieel-loc-select{pointer-events:none;}
+  body.locked .materieel-del{display:none;}
   .month-mag{font-size:12px; color:var(--ink-soft);}
   .month-conflict{font-size:12px; color:var(--red-text);}
   .month-pending{font-size:12px; color:var(--cat-cntrl-text); font-weight:600;}
@@ -124,6 +144,7 @@
   .absent-select{border:1px solid var(--border); background:var(--red-bg); color:var(--red-text); border-radius:16px; padding:5px 10px; font-size:13px; font-family:inherit; max-width:120px;}
   .absent-select.absent-add{background:var(--bg); color:var(--ink-soft); max-width:110px;}
   .absent-entry .del{font-size:14px; padding:2px 4px;}
+  body.locked .absent-select{pointer-events:none; cursor:default;}
   body.locked .absent-entry .del, body.locked .absent-add{display:none;}
   .row{display:flex; align-items:center; gap:12px; padding:10px 0; border-top:1px solid var(--border); flex-wrap:wrap;}
   .row:first-of-type{border-top:none;}
@@ -193,7 +214,7 @@
     .daynav{width:100%; gap:6px;}
     .daynav button, .liststoggle, .themetoggle{padding:8px 10px; font-size:13px;}
     .daynav input[type=date]{font-size:13px; padding:6px 8px; flex:1 1 auto; min-width:0;}
-    #viewSelect{font-size:13px; padding:8px 10px;}
+    #viewSelect{font-size:13px; padding:8px 10px; max-width:130px;}
     .legend{font-size:12px; gap:8px 14px; margin-bottom:16px;}
     .pending-badge{font-size:13px; padding:7px 12px;}
     .absent-bar{font-size:13px; padding:8px 12px;}
@@ -218,6 +239,9 @@
     .month-day{min-height:60px; padding:5px 4px; font-size:11px;}
     .month-day .daynum{font-size:13px;}
     .month-dot{width:7px; height:7px;}
+    .materieel-board{grid-template-columns:1fr;}
+    .materieel-naam{font-size:13px;}
+    .materieel-loc-select{font-size:11px;}
   }
 </style>
 </head>
@@ -244,6 +268,7 @@
         <option value="week">Weekoverzicht</option>
         <option value="maand">Maandoverzicht</option>
       </select>
+      <button class="liststoggle" id="materieelBtn" title="Materieel (trekkers &amp; opleggers)">&#128667; Materieel</button>
       <button class="liststoggle" id="listsToggle" title="Lijsten beheren">&#9881; Lijsten</button>
       <button class="liststoggle" id="lockToggle" title="Bewerken vergrendeld">&#128274; Bewerken</button>
       <button class="liststoggle" id="chefToggle" title="Chef-modus (goedkeuren)">&#128737; Chef</button>
@@ -291,6 +316,21 @@
   <div id="monthView" style="display:none;">
     <div class="section-head"><h2 id="monthLabel">Maand</h2></div>
     <div class="monthgrid" id="monthGrid"></div>
+  </div>
+
+  <div id="materieelView" style="display:none;">
+    <div class="section-head">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <button class="liststoggle" id="backToPlanning">&#8592; Terug naar planning</button>
+        <h2 style="margin:0;">Materieel</h2>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button class="addproj" id="addTrekker">+ Trekker</button>
+        <button class="addproj" id="addOplegger">+ Oplegger</button>
+      </div>
+    </div>
+    <p id="materieelUpdated" class="section-date" style="margin:-8px 0 14px;"></p>
+    <div class="materieel-board" id="materieelBoard"></div>
   </div>
 
   <p class="status" id="statusLine">&nbsp;</p>
@@ -994,19 +1034,38 @@ document.getElementById("viewSelect").addEventListener("change", (e) => {
   setViewMode(e.target.value);
 });
 
+document.getElementById("materieelBtn").addEventListener("click", () => {
+  setViewMode("materieel");
+});
+
+document.getElementById("backToPlanning").addEventListener("click", () => {
+  setViewMode("dag");
+});
+
 function setViewMode(mode){
   viewMode = mode;
   document.getElementById("dayView").style.display = mode === "dag" ? "" : "none";
   document.getElementById("weekView").style.display = mode === "week" ? "" : "none";
   document.getElementById("monthView").style.display = mode === "maand" ? "" : "none";
-  document.getElementById("viewSelect").value = mode;
-  const heading = mode === "week" ? "Weekoverzicht" : mode === "maand" ? "Maandoverzicht" : "Dagplanning";
+  document.getElementById("materieelView").style.display = mode === "materieel" ? "" : "none";
+  if(mode === "dag" || mode === "week" || mode === "maand"){
+    document.getElementById("viewSelect").value = mode;
+  }
+  const heading = mode === "week" ? "Weekoverzicht" : mode === "maand" ? "Maandoverzicht" : mode === "materieel" ? "Materieel" : "Dagplanning";
   document.getElementById("mainHeading").textContent = heading;
   document.title = "SLS · " + heading;
+  const isDatebound = mode === "dag" || mode === "week" || mode === "maand";
+  document.getElementById("prevDay").style.display = isDatebound ? "" : "none";
+  document.getElementById("nextDay").style.display = isDatebound ? "" : "none";
+  document.getElementById("todayBtn").style.display = isDatebound ? "" : "none";
+  document.getElementById("datePicker").style.display = isDatebound ? "" : "none";
+  document.querySelector(".legend").style.display = mode === "materieel" ? "none" : "";
+  document.querySelector(".absent-bar").style.display = mode === "materieel" ? "none" : "";
   document.getElementById("prevDay").title = mode === "week" ? "Vorige week" : mode === "maand" ? "Vorige maand" : "Vorige dag";
   document.getElementById("nextDay").title = mode === "week" ? "Volgende week" : mode === "maand" ? "Volgende maand" : "Volgende dag";
   if(mode === "week") renderWeek();
   if(mode === "maand") renderMonth();
+  if(mode === "materieel") loadMaterieel();
 }
 
 document.addEventListener("change", (e) => {
@@ -1145,6 +1204,152 @@ function getISOWeek(dateStr){
   const week1 = new Date(d.getFullYear(), 0, 4);
   return 1 + Math.round(((d - week1) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
 }
+
+const MATERIEEL_KEY = "sls-planning:materieel";
+const LOCATIES = ["Op de zaak", "Parkeerterrein", "Op klus"];
+let materieel = [];
+let materieelUpdatedAt = null;
+let materieelSaveTimer = null;
+
+function defaultMaterieel(){
+  const list = [];
+  for(let i = 1; i <= 4; i++){
+    const nr = String(i).padStart(2, "0");
+    list.push({ id: "tr-" + nr, naam: "TR-" + nr, type: "trekker", locatie: "Op de zaak" });
+  }
+  for(let i = 1; i <= 8; i++){
+    const nr = String(i).padStart(2, "0");
+    list.push({ id: "opl-" + nr, naam: "OPL-" + nr, type: "oplegger", locatie: "Op de zaak" });
+  }
+  return list;
+}
+
+function renderMaterieelUpdated(){
+  const el = document.getElementById("materieelUpdated");
+  if(!el) return;
+  if(!materieelUpdatedAt){ el.textContent = ""; return; }
+  const d = new Date(materieelUpdatedAt);
+  const tekst = d.toLocaleDateString("nl-NL", {day:"numeric", month:"long", year:"numeric"}) +
+    ", " + d.toLocaleTimeString("nl-NL", {hour:"2-digit", minute:"2-digit"});
+  el.textContent = "Laatst bijgewerkt: " + tekst;
+}
+
+async function loadMaterieel(){
+  try{
+    const res = await safeGet(MATERIEEL_KEY, true);
+    const data = JSON.parse(res.value);
+    if(Array.isArray(data)){
+      // oud formaat: alleen een lijst, zonder tijdstempel
+      materieel = data;
+      materieelUpdatedAt = null;
+    } else {
+      materieel = data.items || [];
+      materieelUpdatedAt = data.updatedAt || null;
+    }
+    if(!materieel.length) throw new Error("leeg");
+  }catch(e){
+    materieel = defaultMaterieel();
+    materieelUpdatedAt = null;
+    scheduleMaterieelSave();
+  }
+  renderMaterieel();
+  renderMaterieelUpdated();
+}
+
+function scheduleMaterieelSave(){
+  clearTimeout(materieelSaveTimer);
+  materieelSaveTimer = setTimeout(async () => {
+    materieelUpdatedAt = new Date().toISOString();
+    renderMaterieelUpdated();
+    try{
+      await safeSet(MATERIEEL_KEY, JSON.stringify({ items: materieel, updatedAt: materieelUpdatedAt }), true);
+    }catch(e){}
+  }, 500);
+}
+
+function renderMaterieel(){
+  const board = document.getElementById("materieelBoard");
+  board.innerHTML = "";
+  LOCATIES.forEach(loc => {
+    const col = document.createElement("div");
+    col.className = "materieel-col";
+    col.dataset.locatie = loc;
+    const items = materieel.filter(m => m.locatie === loc);
+    col.innerHTML = `<h3>${escapeAttr(loc)} <span style="color:var(--ink-soft); font-weight:400; font-size:13px;">(${items.length})</span></h3>`;
+    items.forEach(m => {
+      const card = document.createElement("div");
+      card.className = "materieel-card";
+      card.draggable = true;
+      card.dataset.id = m.id;
+      const locOptions = LOCATIES.map(l => `<option value="${escapeAttr(l)}" ${l===m.locatie?'selected':''}>${escapeAttr(l)}</option>`).join("");
+      card.innerHTML = `
+        <span class="materieel-type-dot ${m.type}"></span>
+        <input class="materieel-naam" value="${escapeAttr(m.naam)}" data-mat-id="${m.id}" data-mat-field="naam">
+        <select class="materieel-loc-select" data-mat-id="${m.id}">${locOptions}</select>
+        <button class="del materieel-del" data-action="delmaterieel" data-mat-id="${m.id}" title="Verwijderen">&times;</button>
+      `;
+      col.appendChild(card);
+    });
+    board.appendChild(col);
+  });
+}
+
+function escapeAttrSafe(v){ return escapeAttr(v); }
+
+document.getElementById("addTrekker").addEventListener("click", () => {
+  materieel.push({ id: "m" + Date.now() + Math.random().toString(36).slice(2,6), naam: "Nieuwe trekker", type: "trekker", locatie: "Op de zaak" });
+  renderMaterieel(); scheduleMaterieelSave();
+});
+document.getElementById("addOplegger").addEventListener("click", () => {
+  materieel.push({ id: "m" + Date.now() + Math.random().toString(36).slice(2,6), naam: "Nieuwe oplegger", type: "oplegger", locatie: "Op de zaak" });
+  renderMaterieel(); scheduleMaterieelSave();
+});
+
+document.addEventListener("input", (e) => {
+  if(e.target.dataset.matId !== undefined && e.target.dataset.matField === "naam"){
+    const item = materieel.find(m => m.id === e.target.dataset.matId);
+    if(item){ item.naam = e.target.value; scheduleMaterieelSave(); }
+  }
+});
+
+document.addEventListener("change", (e) => {
+  if(e.target.classList && e.target.classList.contains("materieel-loc-select")){
+    const item = materieel.find(m => m.id === e.target.dataset.matId);
+    if(item){ item.locatie = e.target.value; renderMaterieel(); scheduleMaterieelSave(); }
+  }
+});
+
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-action='delmaterieel']");
+  if(btn){
+    materieel = materieel.filter(m => m.id !== btn.dataset.matId);
+    renderMaterieel(); scheduleMaterieelSave();
+  }
+});
+
+document.getElementById("materieelBoard").addEventListener("dragstart", (e) => {
+  const card = e.target.closest(".materieel-card");
+  if(card) e.dataTransfer.setData("text/plain", card.dataset.id);
+});
+
+document.getElementById("materieelBoard").addEventListener("dragover", (e) => {
+  const col = e.target.closest(".materieel-col");
+  if(col){ e.preventDefault(); col.classList.add("dragover"); }
+});
+document.getElementById("materieelBoard").addEventListener("dragleave", (e) => {
+  const col = e.target.closest(".materieel-col");
+  if(col) col.classList.remove("dragover");
+});
+document.getElementById("materieelBoard").addEventListener("drop", (e) => {
+  const col = e.target.closest(".materieel-col");
+  if(!col) return;
+  e.preventDefault();
+  col.classList.remove("dragover");
+  if(document.body.classList.contains("locked")) return;
+  const id = e.dataTransfer.getData("text/plain");
+  const item = materieel.find(m => m.id === id);
+  if(item){ item.locatie = col.dataset.locatie; renderMaterieel(); scheduleMaterieelSave(); }
+});
 
 function changeMonth(deltaMonths){
   const d = new Date(currentDate + "T00:00:00");
