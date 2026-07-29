@@ -1281,6 +1281,8 @@ function buildMaterieelCard(m, trekkers, linked){
   card.draggable = true;
   card.dataset.id = m.id;
   card.dataset.isTrekker = isTrekkerNaam(m.naam) ? "1" : "0";
+  const catVar = m.type === "trekker" ? "--cat-install" : "--cat-cntrl";
+  card.style.background = `color-mix(in srgb, var(${catVar}) 14%, var(--card))`;
 
   let locOptionsHtml = LOCATIES.map(l => `<option value="${escapeAttr(l)}" ${l===m.locatie?'selected':''}>${escapeAttr(l)}</option>`).join("");
   if(!isTrekkerNaam(m.naam)){
