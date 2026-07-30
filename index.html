@@ -11,6 +11,7 @@
     --cat-install:#1E4B6E; --cat-install-text:#1E4B6E;
     --cat-cntrl:#E1702A; --cat-cntrl-text:#8A3E12;
     --magazijn:#8E3B7D; --magazijn-dark:#6E2E60;
+    --opruimen:#0E7C7B; --opruimen-dark:#0B6362;
     --purple:#8E3B7D;
     --gray:#9199A6; --gray-dark:#5B6270;
     --ink:#20242B; --ink-soft:#5B6270;
@@ -23,6 +24,7 @@
     --cat-install:#4C8DBD; --cat-install-text:#7CB6DE;
     --cat-cntrl:#EA8B54; --cat-cntrl-text:#EA8B54;
     --magazijn:#C97BB4; --magazijn-dark:#C97BB4;
+    --opruimen:#3FBFBD; --opruimen-dark:#3FBFBD;
     --purple:#C97BB4;
     --gray:#8A9099; --gray-dark:#B8BEC6;
     --ink:#ECEDEE; --ink-soft:#9AA0A8;
@@ -128,6 +130,7 @@
   .month-conflict{font-size:12px; color:var(--red-text);}
   .month-pending{font-size:12px; color:var(--cat-cntrl-text); font-weight:600;}
   .card.magazijn{border-left-color:var(--magazijn);}
+  .card.opruimen{border-left-color:var(--opruimen);}
   .card.magazijn.task-done{background:var(--done-bg);}
   .card.project-done{background:var(--done-bg); border-left-color:var(--green); padding:14px 20px;}
   .card.project-done input[type=checkbox]{width:20px; height:20px; accent-color:var(--green); flex-shrink:0; cursor:pointer;}
@@ -170,6 +173,9 @@
   .f-naam{width:170px; font-weight:500;}
   .f-transport{width:210px;}
   .f-tijd{width:85px;}
+  .opr-locatie{width:190px; border:1px solid var(--border); background:var(--card); color:var(--ink); font-family:inherit; font-size:14px; padding:6px 8px; border-radius:7px;}
+  .opr-duur{width:150px; border:1px solid var(--border); background:var(--card); color:var(--ink); font-family:inherit; font-size:14px; padding:6px 8px; border-radius:7px;}
+  body.locked .opr-locatie, body.locked .opr-duur{pointer-events:none;}
   .f-opm{flex:1; min-width:180px; font-style:italic; color:var(--ink-soft);}
   .f-taak{flex:1; min-width:200px; font-weight:500;}
   .col-header .f-naam{width:170px;}
@@ -198,7 +204,7 @@
   .modal{background:var(--card); border-radius:16px; padding:30px; width:100%; max-width:1100px; max-height:88vh; overflow:auto; border:1px solid var(--border);}
   .modal h2{margin:0 0 6px; font-size:22px;}
   .modal p.hint{margin:0 0 20px; color:var(--ink-soft); font-size:16px;}
-  .modal-grid{display:grid; grid-template-columns:1fr 1fr 1fr; gap:22px;}
+  .modal-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:22px;}
   .modal-col label{display:block; font-weight:700; font-size:16px; margin-bottom:8px;}
   .modal-col textarea{width:100%; height:360px; font-family:inherit; font-size:16px; padding:12px; border:1px solid var(--border); border-radius:10px; background:var(--bg); color:var(--ink); resize:vertical;}
   .modal-actions{display:flex; justify-content:flex-end; gap:12px; margin-top:24px;}
@@ -296,6 +302,7 @@
     <span><span class="dot" style="background:var(--cat-install)"></span>SLS Install</span>
     <span><span class="dot" style="background:var(--cat-cntrl)"></span>CNTRL</span>
     <span><span class="dot" style="background:var(--magazijn)"></span>Magazijn / TD</span>
+    <span><span class="dot" style="background:var(--opruimen)"></span>Opruimen loods</span>
     <span><span class="dot" style="background:var(--red-text)"></span>Materieel-conflict</span>
   </div>
 
@@ -309,6 +316,15 @@
     <div class="section-head"><h2>Projecten <span class="section-date" id="projDateLabel"></span></h2><button class="clearall" id="clearProjects" title="Alle projecten van deze dag verwijderen">Wis alle projecten</button></div>
     <div id="projectenList"></div>
     <button class="addproj" id="addProject">+ Project toevoegen</button>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><h2>Opruimen loods</h2></div>
+    <div id="opruimenList"></div>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <button class="addproj" id="addOpruimen" style="flex:1;">+ Item toevoegen</button>
+      <button class="clearall" id="clearOpruimen" title="Alle opruim-items van deze dag verwijderen">Wis alles</button>
+    </div>
   </div>
 
   <div class="section">
@@ -366,6 +382,10 @@
         <label for="taTransport">Transport</label>
         <textarea id="taTransport"></textarea>
       </div>
+      <div class="modal-col">
+        <label for="taLocatie">Locatie/Materiaal</label>
+        <textarea id="taLocatie"></textarea>
+      </div>
     </div>
     <div class="modal-actions">
       <button class="btn-secondary" id="listsCancel">Annuleren</button>
@@ -412,6 +432,18 @@
       <button class="btn-secondary" id="taskDelCancel">Annuleren</button>
       <button class="btn-primary" id="taskDelDone" style="background:var(--green);">Afgerond</button>
       <button class="btn-primary" id="taskDelRemove" style="background:var(--red-text);">Verwijderen</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop hidden" id="opruimDeleteModal">
+  <div class="modal" style="max-width:440px;">
+    <h2>Item verwijderen of afronden?</h2>
+    <p id="opruimDeleteBody" style="color:var(--ink-soft); font-size:15px; margin:0 0 20px;"></p>
+    <div class="modal-actions" style="flex-wrap:wrap;">
+      <button class="btn-secondary" id="opruimDelCancel">Annuleren</button>
+      <button class="btn-primary" id="opruimDelDone" style="background:var(--green);">Afgerond</button>
+      <button class="btn-primary" id="opruimDelRemove" style="background:var(--red-text);">Verwijderen</button>
     </div>
   </div>
 </div>
@@ -539,6 +571,23 @@ const BON_OPTIONS = [
 let ROLLEN = ["Brengen","Halen","Chauffeur","Bouw","Breek","Allround","Audio Broadcast","Audio FOH","Audio MON","Audiosysteem","Audiotech","Buhne","Layhertech","Ledtech","Lichtoperator","Lichtsysteem","Lichttech","Prikker","Projectleider","Rigger","SFX","Show","Site","Stroom","Videotech","Volgspot","Zenders","Zoom","Prep","Installatie","Onderhoud","Opstart","Programmeren","Wireless","Pakken","Laden","Lossen","Opruimen","Klaarzetten","Testen","Audio+Chauf","Magazijner"];
 let CREW = ["Brechje","Daan","Daniel","Ed","Huub","Jarnick","Jeroen","Joav","Jochem","Kie-Chi","Mathias","Patrick G","Patrick N","Rob","Alexander","Sander","Stef","Tessa","Thim","Stagiare SLS","Tycho","TD","Loods","?","CNTRL","SLS","Adriaan","Vincent","Bas","Coen","INSTALL","Nathan","R&D","Eigen","Stagiare CNTRL"];
 let TRANSPORT = ["BW-01","BW-02","BW-03","Eigen vervoer","TR-01","TR-02","TR-03","TR-04","OPL-01","OPL-02 (open)","OPL-03","OPL-04","OPL-05","OPL-06","OPL-07","OPL-08","TR-01+OPL-01","TR-01+OPL-02 (open)","TR-01+OPL-03","TR-01+OPL-04","TR-01+OPL-07","TR-01+OPL-08","TR-02+OPL-01","TR-02+OPL-02 (open)","TR-02+OPL-03","TR-02+OPL-04","TR-02+OPL-07","TR-02 +OPL-08","TR-03+OPL-05","TR-03+OPL-06","TR-04+OPL-01","TR-04+OPL-02","TR-04+OPL-03","TR-04+OPL-04","TR-04+OPL-07","TR-04+OPL-08","NNB","Toyota","Golf","INHUUR","CBW-01","TR-01+INHUUR","TR-02+INHUUR","TR-03+INHUUR","TR-04+INHUUR"];
+let LOCATIE_MATERIAAL = ["Plein","Kabelpad","Lichtpad","Riggingpad","Kabels","Rigging","Hardware","Licht","Geluid"];
+
+function genereerDuurOpties(){
+  const opts = [];
+  for(let min = 15; min <= 480; min += 15){
+    const uren = Math.floor(min/60);
+    const rest = min % 60;
+    let label;
+    if(uren === 0) label = `${rest} min`;
+    else if(min === 480) label = "8 uur (hele dag)";
+    else if(rest === 0) label = `${uren} uur`;
+    else label = `${uren} uur ${rest} min`;
+    opts.push(label);
+  }
+  return opts;
+}
+const DUUR_OPTIES = genereerDuurOpties();
 
 function fillDatalist(id, items){
   const dl = document.getElementById(id);
@@ -563,14 +612,15 @@ async function loadLists(){
     if(Array.isArray(data.functies)) ROLLEN = data.functies;
     if(Array.isArray(data.namen)) CREW = data.namen;
     if(Array.isArray(data.transport)) TRANSPORT = data.transport;
+    if(Array.isArray(data.locaties)) LOCATIE_MATERIAAL = data.locaties;
   }catch(e){
-    await safeSet(LISTS_KEY, JSON.stringify({functies:ROLLEN, namen:CREW, transport:TRANSPORT}), true).catch(()=>{});
+    await safeSet(LISTS_KEY, JSON.stringify({functies:ROLLEN, namen:CREW, transport:TRANSPORT, locaties:LOCATIE_MATERIAAL}), true).catch(()=>{});
   }
   refreshDatalists();
 }
 
 async function saveLists(){
-  await safeSet(LISTS_KEY, JSON.stringify({functies:ROLLEN, namen:CREW, transport:TRANSPORT}), true);
+  await safeSet(LISTS_KEY, JSON.stringify({functies:ROLLEN, namen:CREW, transport:TRANSPORT, locaties:LOCATIE_MATERIAAL}), true);
 }
 
 function linesToList(text){
@@ -581,6 +631,7 @@ document.getElementById("listsToggle").addEventListener("click", () => {
   document.getElementById("taNaam").value = CREW.join("\n");
   document.getElementById("taFunctie").value = ROLLEN.join("\n");
   document.getElementById("taTransport").value = TRANSPORT.join("\n");
+  document.getElementById("taLocatie").value = LOCATIE_MATERIAAL.join("\n");
   document.getElementById("listsModal").classList.remove("hidden");
 });
 document.getElementById("listsCancel").addEventListener("click", () => {
@@ -593,7 +644,9 @@ document.getElementById("listsSave").addEventListener("click", async () => {
   CREW = linesToList(document.getElementById("taNaam").value);
   ROLLEN = linesToList(document.getElementById("taFunctie").value);
   TRANSPORT = linesToList(document.getElementById("taTransport").value);
+  LOCATIE_MATERIAAL = linesToList(document.getElementById("taLocatie").value);
   refreshDatalists();
+  renderOpruimen();
   await saveLists();
   document.getElementById("listsModal").classList.add("hidden");
 });
@@ -631,12 +684,13 @@ function exampleState(){
       { taak:"Froukje opruimen", done:false, opm:"", rows:[{naam:"", transport:""}] },
       { taak:"Antoon voor de deur", done:true, opm:"", rows:[{naam:"", transport:""}] },
       { taak:"Stef neemt Toyota mee", done:true, opm:"", rows:[{naam:"", transport:""}] }
-    ]
+    ],
+    opruimen: []
   };
 }
 
 function emptyState(){
-  return { afwezig: [], projects: [], magazijn: [] };
+  return { afwezig: [], projects: [], magazijn: [], opruimen: [] };
 }
 
 async function initTheme(){
@@ -676,6 +730,7 @@ async function loadDay(dateStr){
     const res = await safeGet(KEY_PREFIX + dateStr, true);
     newState = JSON.parse(res.value);
     if(!Array.isArray(newState.afwezig)) newState.afwezig = [];
+    if(!Array.isArray(newState.opruimen)) newState.opruimen = [];
     newState.projects.forEach(p => {
       if(!p.category) p.category = "SLS";
       if(!p.bonStatus) p.bonStatus = "nog niet";
@@ -986,7 +1041,61 @@ function render(){
     magList.appendChild(card);
   });
 
+  renderOpruimen();
   updateConflictStyles();
+}
+
+function renderOpruimen(){
+  const list = document.getElementById("opruimenList");
+  if(!list) return;
+  list.innerHTML = "";
+  const indexed = state.opruimen.map((o, i) => ({ o, i }));
+  const done = indexed.filter(x => x.o.done);
+  const active = indexed.filter(x => !x.o.done);
+
+  done.forEach(({ o, i: oi }) => {
+    const card = document.createElement("div");
+    card.className = "card project-done";
+    card.innerHTML = `
+      <div class="proj-title-row" style="margin:0;">
+        <input type="checkbox" checked data-oi="${oi}" data-field="opruim-done-toggle" title="Terugzetten naar actief">
+        <span class="proj-title-done-text">${escapeAttr(o.naam || "(naamloos)")}</span>
+      </div>
+    `;
+    list.appendChild(card);
+  });
+
+  active.forEach(({ o, i: oi }) => {
+    const card = document.createElement("div");
+    card.className = "card opruimen";
+
+    const head = document.createElement("div");
+    head.className = "proj-title-row";
+    head.innerHTML = `
+      <input type="checkbox" ${o.done?'checked':''} data-oi="${oi}" data-field="opr-done" style="flex-shrink:0;">
+      <input class="proj-title" list="naamList" placeholder="naam" value="${escapeAttr(o.naam)}" data-oi="${oi}" data-field="naam">
+      <button class="del" data-action="delopruim" data-oi="${oi}" title="Verwijderen">&times;</button>
+    `;
+    card.appendChild(head);
+
+    const locOptions = ['<option value="">Locatie/materiaal</option>'].concat(
+      LOCATIE_MATERIAAL.map(l => `<option value="${escapeAttr(l)}" ${l===o.locatie?'selected':''}>${escapeAttr(l)}</option>`)
+    ).join("");
+    const duurOptions = ['<option value="">Geschatte duur</option>'].concat(
+      DUUR_OPTIES.map(d => `<option value="${escapeAttr(d)}" ${d===o.duur?'selected':''}>${escapeAttr(d)}</option>`)
+    ).join("");
+
+    const row = document.createElement("div");
+    row.className = "row";
+    row.innerHTML = `
+      <select class="opr-locatie" data-oi="${oi}" data-field="locatie">${locOptions}</select>
+      <select class="opr-duur" data-oi="${oi}" data-field="duur">${duurOptions}</select>
+      <input class="f-opm" placeholder="opmerking" value="${escapeAttr(o.opm)}" data-oi="${oi}" data-field="opm">
+    `;
+    card.appendChild(row);
+
+    list.appendChild(card);
+  });
 }
 
 function getVarColor(name){
@@ -1060,6 +1169,10 @@ document.addEventListener("input", (e) => {
       state.magazijn[mi][t.dataset.field] = t.value;
     }
     scheduleSave();
+  } else if(t.dataset.oi !== undefined && t.dataset.field){
+    const oi = +t.dataset.oi;
+    state.opruimen[oi][t.dataset.field] = t.value;
+    scheduleSave();
   }
 });
 
@@ -1073,6 +1186,15 @@ document.addEventListener("change", (e) => {
   } else if(t.dataset.field === "bonStatus" && t.dataset.pi !== undefined){
     state.projects[+t.dataset.pi].bonStatus = t.value;
     render(); scheduleSave();
+  } else if((t.dataset.field === "locatie" || t.dataset.field === "duur") && t.dataset.oi !== undefined){
+    state.opruimen[+t.dataset.oi][t.dataset.field] = t.value;
+    scheduleSave();
+  } else if(t.dataset.field === "opr-done" && t.dataset.oi !== undefined){
+    state.opruimen[+t.dataset.oi].done = t.checked;
+    render(); scheduleSave();
+  } else if(t.dataset.field === "opruim-done-toggle" && t.dataset.oi !== undefined){
+    const item = state.opruimen[+t.dataset.oi];
+    if(item){ item.done = false; render(); scheduleSave(); }
   }
 });
 
@@ -1114,6 +1236,11 @@ document.addEventListener("click", (e) => {
   } else if(btn.id === "addMagTask"){
     state.magazijn.push({taak:"Nieuwe taak", done:false, opm:"", rows:[{naam:"", transport:""}]});
     render(); scheduleSave();
+  } else if(btn.id === "addOpruimen"){
+    state.opruimen.push({naam:"", locatie:"", duur:"", opm:"", done:false});
+    render(); scheduleSave();
+  } else if(action === "delopruim"){
+    askOpruimDelete(+btn.dataset.oi);
   } else if(btn.id === "clearProjects"){
     askConfirm("Weet je zeker dat je ALLE projecten van " + currentDate + " wilt verwijderen? Dit kan niet ongedaan worden gemaakt.", () => {
       state.projects = [];
@@ -1122,6 +1249,11 @@ document.addEventListener("click", (e) => {
   } else if(btn.id === "clearMagazijn"){
     askConfirm("Weet je zeker dat je ALLE magazijntaken van " + currentDate + " wilt verwijderen? Dit kan niet ongedaan worden gemaakt.", () => {
       state.magazijn = [];
+      render(); scheduleSave();
+    });
+  } else if(btn.id === "clearOpruimen"){
+    askConfirm("Weet je zeker dat je ALLE opruim-items van " + currentDate + " wilt verwijderen? Dit kan niet ongedaan worden gemaakt.", () => {
+      state.opruimen = [];
       render(); scheduleSave();
     });
   } else if(btn.id === "prevDay"){
@@ -1902,6 +2034,31 @@ function askTaskDelete(mi){
 
 document.getElementById("taskDeleteModal").addEventListener("click", (e) => {
   if(e.target.id === "taskDeleteModal") document.getElementById("taskDeleteModal").classList.add("hidden");
+});
+
+function askOpruimDelete(oi){
+  const item = state.opruimen[oi];
+  if(!item) return;
+  document.getElementById("opruimDeleteBody").textContent = `Wat wil je doen met "${item.naam || '(naamloos item)'}"?`;
+  document.getElementById("opruimDeleteModal").classList.remove("hidden");
+
+  document.getElementById("opruimDelCancel").onclick = () => {
+    document.getElementById("opruimDeleteModal").classList.add("hidden");
+  };
+  document.getElementById("opruimDelDone").onclick = () => {
+    item.done = true;
+    document.getElementById("opruimDeleteModal").classList.add("hidden");
+    render(); scheduleSave();
+  };
+  document.getElementById("opruimDelRemove").onclick = () => {
+    state.opruimen.splice(oi, 1);
+    document.getElementById("opruimDeleteModal").classList.add("hidden");
+    render(); scheduleSave();
+  };
+}
+
+document.getElementById("opruimDeleteModal").addEventListener("click", (e) => {
+  if(e.target.id === "opruimDeleteModal") document.getElementById("opruimDeleteModal").classList.add("hidden");
 });
 
 (async function init(){
