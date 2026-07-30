@@ -129,6 +129,10 @@
   .month-pending{font-size:12px; color:var(--cat-cntrl-text); font-weight:600;}
   .card.magazijn{border-left-color:var(--magazijn);}
   .card.magazijn.task-done{background:var(--done-bg);}
+  .card.project-done{background:var(--done-bg); border-left-color:var(--green); padding:14px 20px;}
+  .card.project-done input[type=checkbox]{width:20px; height:20px; accent-color:var(--green); flex-shrink:0; cursor:pointer;}
+  .proj-title-done-text{font-weight:600; font-size:16px; color:var(--green-dark);}
+  body.locked .card.project-done input[type=checkbox]{pointer-events:none;}
   .proj-title-row{display:flex; align-items:center; gap:12px; margin-bottom:10px;}
   .proj-title{font-weight:600; font-size:20px; border:none; background:transparent; color:var(--ink); flex:1; font-family:inherit; padding:6px 4px; border-bottom:1px solid transparent;}
   .proj-title:hover, .proj-title:focus{border-bottom:1px solid var(--border); outline:none;}
@@ -388,6 +392,30 @@
   </div>
 </div>
 
+<div class="modal-backdrop hidden" id="projectDeleteModal">
+  <div class="modal" style="max-width:440px;">
+    <h2>Project verwijderen of afronden?</h2>
+    <p id="projectDeleteBody" style="color:var(--ink-soft); font-size:15px; margin:0 0 20px;"></p>
+    <div class="modal-actions" style="flex-wrap:wrap;">
+      <button class="btn-secondary" id="projDelCancel">Annuleren</button>
+      <button class="btn-primary" id="projDelDone" style="background:var(--green);">Afgerond</button>
+      <button class="btn-primary" id="projDelRemove" style="background:var(--red-text);">Verwijderen</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop hidden" id="taskDeleteModal">
+  <div class="modal" style="max-width:440px;">
+    <h2>Taak verwijderen of afronden?</h2>
+    <p id="taskDeleteBody" style="color:var(--ink-soft); font-size:15px; margin:0 0 20px;"></p>
+    <div class="modal-actions" style="flex-wrap:wrap;">
+      <button class="btn-secondary" id="taskDelCancel">Annuleren</button>
+      <button class="btn-primary" id="taskDelDone" style="background:var(--green);">Afgerond</button>
+      <button class="btn-primary" id="taskDelRemove" style="background:var(--red-text);">Verwijderen</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-backdrop hidden" id="chefModal">
   <div class="modal" style="max-width:440px;">
     <h2 id="chefModalTitle">Chef-modus ontgrendelen</h2>
@@ -629,6 +657,12 @@ document.getElementById("themeToggle").addEventListener("click", async () => {
   const cur = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
   applyTheme(cur);
   try{ await safeSet(THEME_KEY, cur, false); }catch(e){}
+  if(state){
+    if(viewMode === "dag") render();
+    else if(viewMode === "week") renderWeek();
+    else if(viewMode === "maand") renderMonth();
+  }
+  if(viewMode === "materieel") renderMaterieel();
 });
 
 let loadToken = 0;
@@ -733,7 +767,7 @@ function markProjectEdited(pi){
   const card = document.querySelectorAll("#projectenList > .card")[pi];
   if(card){
     const catVar = CAT_VARS[proj.category] || "--cat-sls";
-    card.style.background = `color-mix(in srgb, var(${catVar}) ${proj.approved ? 16 : 6}%, var(--card))`;
+    card.style.background = tintBackground(catVar, proj.approved ? 16 : 6);
     const led = card.querySelector(".approval-led");
     if(led){
       led.classList.toggle("approved", proj.approved);
@@ -809,12 +843,28 @@ function render(){
 
   const projList = document.getElementById("projectenList");
   projList.innerHTML = "";
-  state.projects.forEach((proj, pi) => {
+  const indexedProjects = state.projects.map((p, i) => ({ p, i }));
+  const completedProjects = indexedProjects.filter(x => x.p.voltooid);
+  const activeProjects = indexedProjects.filter(x => !x.p.voltooid);
+
+  completedProjects.forEach(({ p, i }) => {
+    const card = document.createElement("div");
+    card.className = "card project-done";
+    card.innerHTML = `
+      <div class="proj-title-row" style="margin:0;">
+        <input type="checkbox" checked data-pi="${i}" data-field="voltooid-toggle" title="Terugzetten naar actief">
+        <span class="proj-title-done-text">${escapeAttr(p.name)}</span>
+      </div>
+    `;
+    projList.appendChild(card);
+  });
+
+  activeProjects.forEach(({ p: proj, i: pi }) => {
     const card = document.createElement("div");
     card.className = "card";
     const catVar = CAT_VARS[proj.category] || "--cat-sls";
     card.style.borderLeftColor = `var(${catVar})`;
-    card.style.background = `color-mix(in srgb, var(${catVar}) ${proj.approved ? 16 : 6}%, var(--card))`;
+    card.style.background = tintBackground(catVar, proj.approved ? 16 : 6);
 
     const titleRow = document.createElement("div");
     titleRow.className = "proj-title-row";
@@ -878,9 +928,25 @@ function render(){
 
   const magList = document.getElementById("magazijnList");
   magList.innerHTML = "";
-  state.magazijn.forEach((m, mi) => {
+  const indexedTasks = state.magazijn.map((m, i) => ({ m, i }));
+  const doneTasks = indexedTasks.filter(x => x.m.done);
+  const activeTasks = indexedTasks.filter(x => !x.m.done);
+
+  doneTasks.forEach(({ m, i: mi }) => {
     const card = document.createElement("div");
-    card.className = "card magazijn" + (m.done ? " task-done" : "");
+    card.className = "card project-done";
+    card.innerHTML = `
+      <div class="proj-title-row" style="margin:0;">
+        <input type="checkbox" checked data-mi="${mi}" data-field="done-toggle" title="Terugzetten naar actief">
+        <span class="proj-title-done-text">${escapeAttr(m.taak)}</span>
+      </div>
+    `;
+    magList.appendChild(card);
+  });
+
+  activeTasks.forEach(({ m, i: mi }) => {
+    const card = document.createElement("div");
+    card.className = "card magazijn";
 
     const head = document.createElement("div");
     head.className = "proj-title-row";
@@ -923,9 +989,51 @@ function render(){
   updateConflictStyles();
 }
 
+function getVarColor(name){
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+function hexToRgb(hex){
+  hex = hex.replace("#", "");
+  if(hex.length === 3) hex = hex.split("").map(c => c+c).join("");
+  const num = parseInt(hex, 16);
+  return [(num>>16)&255, (num>>8)&255, num&255];
+}
+function tintBackground(catVarName, pct){
+  try{
+    const a = hexToRgb(getVarColor(catVarName));
+    const b = hexToRgb(getVarColor("--card"));
+    const f = pct/100;
+    const r = Math.round(a[0]*f + b[0]*(1-f));
+    const g = Math.round(a[1]*f + b[1]*(1-f));
+    const bl = Math.round(a[2]*f + b[2]*(1-f));
+    return `rgb(${r}, ${g}, ${bl})`;
+  }catch(e){
+    return "var(--card)";
+  }
+}
+
 function escapeAttr(v){
   return String(v ?? "").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
 }
+
+document.addEventListener("change", (e) => {
+  if(!state) return;
+  const t = e.target;
+  if(t.dataset.field === "voltooid-toggle" && t.dataset.pi !== undefined){
+    const proj = state.projects[+t.dataset.pi];
+    if(proj){
+      proj.voltooid = false;
+      render(); scheduleSave();
+    }
+  }
+  if(t.dataset.field === "done-toggle" && t.dataset.mi !== undefined){
+    const taak = state.magazijn[+t.dataset.mi];
+    if(taak){
+      taak.done = false;
+      render(); scheduleSave();
+    }
+  }
+});
 
 document.addEventListener("input", (e) => {
   if(!state) return;
@@ -947,9 +1055,7 @@ document.addEventListener("input", (e) => {
     const mi = +t.dataset.mi;
     if(t.dataset.field === "done"){
       state.magazijn[mi].done = t.checked;
-      const card = t.closest(".card");
-      card.classList.toggle("task-done", t.checked);
-      card.querySelector(".proj-title").classList.toggle("done-text", t.checked);
+      render();
     } else {
       state.magazijn[mi][t.dataset.field] = t.value;
     }
@@ -976,8 +1082,7 @@ document.addEventListener("click", (e) => {
   const action = btn.dataset.action;
   if(!state && !["prevDay","nextDay","todayBtn"].includes(btn.id) && btn.dataset.action !== "openday") return;
   if(action === "delproject"){
-    state.projects.splice(+btn.dataset.pi, 1);
-    render(); scheduleSave();
+    askProjectDelete(+btn.dataset.pi);
   } else if(action === "delrow"){
     state.projects[+btn.dataset.pi].rows.splice(+btn.dataset.ri, 1);
     markProjectEdited(+btn.dataset.pi);
@@ -996,8 +1101,7 @@ document.addEventListener("click", (e) => {
     state.afwezig.splice(+btn.dataset.index, 1);
     renderAbsentBar(); refreshNaamList(); scheduleSave();
   } else if(action === "deltask"){
-    state.magazijn.splice(+btn.dataset.mi, 1);
-    render(); scheduleSave();
+    askTaskDelete(+btn.dataset.mi);
   } else if(action === "delmagrow"){
     state.magazijn[+btn.dataset.mi].rows.splice(+btn.dataset.ri, 1);
     render(); scheduleSave();
@@ -1287,7 +1391,7 @@ function buildMaterieelCard(m, trekkers, linked){
   card.dataset.id = m.id;
   card.dataset.isTrekker = isTrekkerNaam(m.naam) ? "1" : "0";
   const catVar = m.type === "trekker" ? "--cat-install" : "--cat-cntrl";
-  card.style.background = `color-mix(in srgb, var(${catVar}) 14%, var(--card))`;
+  card.style.background = tintBackground(catVar, 14);
 
   let locOptionsHtml = LOCATIES.map(l => `<option value="${escapeAttr(l)}" ${l===m.locatie?'selected':''}>${escapeAttr(l)}</option>`).join("");
   if(!isTrekkerNaam(m.naam)){
@@ -1748,6 +1852,56 @@ function askConfirm(message, onConfirm){
 
 document.getElementById("confirmModal").addEventListener("click", (e) => {
   if(e.target.id === "confirmModal") document.getElementById("confirmModal").classList.add("hidden");
+});
+
+function askProjectDelete(pi){
+  const proj = state.projects[pi];
+  if(!proj) return;
+  document.getElementById("projectDeleteBody").textContent = `Wat wil je doen met "${proj.name}"?`;
+  document.getElementById("projectDeleteModal").classList.remove("hidden");
+
+  document.getElementById("projDelCancel").onclick = () => {
+    document.getElementById("projectDeleteModal").classList.add("hidden");
+  };
+  document.getElementById("projDelDone").onclick = () => {
+    proj.voltooid = true;
+    document.getElementById("projectDeleteModal").classList.add("hidden");
+    render(); scheduleSave();
+  };
+  document.getElementById("projDelRemove").onclick = () => {
+    state.projects.splice(pi, 1);
+    document.getElementById("projectDeleteModal").classList.add("hidden");
+    render(); scheduleSave();
+  };
+}
+
+document.getElementById("projectDeleteModal").addEventListener("click", (e) => {
+  if(e.target.id === "projectDeleteModal") document.getElementById("projectDeleteModal").classList.add("hidden");
+});
+
+function askTaskDelete(mi){
+  const taak = state.magazijn[mi];
+  if(!taak) return;
+  document.getElementById("taskDeleteBody").textContent = `Wat wil je doen met "${taak.taak}"?`;
+  document.getElementById("taskDeleteModal").classList.remove("hidden");
+
+  document.getElementById("taskDelCancel").onclick = () => {
+    document.getElementById("taskDeleteModal").classList.add("hidden");
+  };
+  document.getElementById("taskDelDone").onclick = () => {
+    taak.done = true;
+    document.getElementById("taskDeleteModal").classList.add("hidden");
+    render(); scheduleSave();
+  };
+  document.getElementById("taskDelRemove").onclick = () => {
+    state.magazijn.splice(mi, 1);
+    document.getElementById("taskDeleteModal").classList.add("hidden");
+    render(); scheduleSave();
+  };
+}
+
+document.getElementById("taskDeleteModal").addEventListener("click", (e) => {
+  if(e.target.id === "taskDeleteModal") document.getElementById("taskDeleteModal").classList.add("hidden");
 });
 
 (async function init(){
